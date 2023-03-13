@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerUser, loginUser, getAllUsers, getOneUser, deleteUser, updateUser, handelRefreshToken, logout } = require('../controller/userController');
+const { registerUser, loginUser, getAllUsers, getOneUser, deleteUser, updateUser, handelRefreshToken, logout, updatePassword, forgotPassword } = require('../controller/userController');
 const auchCheck = require('../middlewares/authCheck');
 const router = express.Router();
 
@@ -19,8 +19,11 @@ router.delete("/:id", auchCheck, deleteUser)
 router.put("/:id", auchCheck, updateUser)
 //  Logout User
 router.post("/logout", logout)
+//  Updated Password User
+router.put("/password/:id", auchCheck , updatePassword)
 
-
+//  Forgot Password User
+router.post("/forgot-password", forgotPassword)
 
 
 

@@ -30,15 +30,15 @@ const userSchema = new mongooes.Schema({
         type: Array,
         default: []
     },
-    address : [{
-        type : objectId , ref:"Address"
+    address: [{
+        type: objectId, ref: "Address"
     }]
     ,
-    wishlist : [{
-        type : objectId , ref:"Product"
+    wishlist: [{
+        type: objectId, ref: "Product"
     }],
-    refreshToken : {
-        type:String
+    refreshToken: {
+        type: String
     }
 },
     {
@@ -47,6 +47,8 @@ const userSchema = new mongooes.Schema({
 )
 
 userSchema.pre('save', async function (next) {
+
+    if (!this.isModified('password')) return next();
     this.password = await bcrypt.hashSync(this.password, 8);
     next();
 })

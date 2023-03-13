@@ -4,6 +4,7 @@ const generateToken = require('../config/jwtToken');
 const validateMongoId = require('../utils/validateMongoID');
 const generateRefreshToken = require('../config/refreshToken');
 const jwt = require('jsonwebtoken');
+const sendEmail = require('./emailController ');
 
 //  register user
 const registerUser = asyncHandler(async (req, res) => {
@@ -31,8 +32,6 @@ const loginUser = asyncHandler(async (req, res) => {
 
     //  check if user exists or not
     const userFind = await User.findOne({ email })
-
-
     if (userFind && await userFind.comparePassword(password)) {
         const refreshToken = generateRefreshToken(userFind?.id);
         const userUpdate = await User.findByIdAndUpdate(userFind?.id, {
@@ -135,13 +134,10 @@ const handelRefreshToken = asyncHandler(async (req, res) => {
 
 //  logout
 const logout = asyncHandler(async (req, res) => {
-
-    const cookie = req.cookies;
-
-    if (!cookie?.refreshToken) throw new Error('No Refresh Token in cookie');
+    const cookie = req.cookies
+    if (!cookie?.refreshToken) throw new Error('No Reresh Token in cookie');
     const refreshToken = cookie.refreshToken;
     const user = await User.findOne({ refreshToken });
-
     if (!user) {
         res.clearCookie('refreshToken', {
             httpOnly: true,
@@ -149,20 +145,60 @@ const logout = asyncHandler(async (req, res) => {
         })
         return res.sendStatus(204) //forbidden
     }
-
-    console.log(user)
-
     await User.findOneAndUpdate(refreshToken, {
         refreshToken: null
     })
-
     res.clearCookie('refreshToken', {
         httpOnly: true,
         secure: true
     })
-     res.sendStatus(204) //forbidden
+    res.sendStatus(204) //forbidden
+})
 
+//  update password user
+const updatePassword = asyncHandler(async (req, res) => {
 
+    const id = req.params.id;
+    const password = req.body.password;
+
+    const user = await User.findById(id);
+    if (!user) {
+        throw new Error('this user not found');
+    }
+
+    if (password) {
+        user.password = password;
+        const updateUserPassword = await user.save();
+        res.json(updateUserPassword);
+    } else {
+        throw new Error('password is incorrect for updated');
+    }
+})
+
+//  forgot password user
+const forgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body
+    const user = await User.findOne({ email });
+    if (!user) {
+        throw new Error('user not found with this email');
+    }
+
+    try {
+        const resetURL = `Hi , please reset your password . <a href='http://127.0.0.1:2020/api/user/reset-password/${user.id}'>Click Here</a>`
+
+        const data = {
+            to: email,
+            Text: "hey user",
+            subject: "Forgot password Link",
+            html: resetURL
+        }
+        sendEmail(data)
+
+        res.json(user)
+
+    } catch (error) {
+
+    }
 
 })
 
@@ -175,5 +211,7 @@ module.exports = {
     deleteUser,
     updateUser,
     handelRefreshToken,
-    logout
+    logout,
+    updatePassword,
+    forgotPassword,
 }
